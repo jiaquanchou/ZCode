@@ -43,6 +43,8 @@ export type DesktopVoiceConfig = {
   whisperBin: string;
   whisperModelPath?: string;
   vadModelPath?: string;
+  /** whisper-server（常驻模式）二进制，可选，默认 whisper-server。 */
+  whisperServerBin?: string;
 };
 
 const DEFAULT_VOICE_CONFIG: DesktopVoiceConfig = {
@@ -51,6 +53,7 @@ const DEFAULT_VOICE_CONFIG: DesktopVoiceConfig = {
   glmModel: "glm-asr",
   language: "zh",
   whisperBin: "whisper-cli",
+  whisperServerBin: "whisper-server",
 };
 
 function resolveVoiceConfigPath(env: NodeJS.ProcessEnv): string {
@@ -77,7 +80,7 @@ export async function readDesktopVoiceConfig(
   if (source.asrProvider === "glm" || source.asrProvider === "whisper-local") {
     config.asrProvider = source.asrProvider;
   }
-  for (const key of ["glmApiKey", "glmBaseUrl", "glmModel", "language", "whisperBin"] as const) {
+  for (const key of ["glmApiKey", "glmBaseUrl", "glmModel", "language", "whisperBin", "whisperServerBin"] as const) {
     const value = source[key];
     if (typeof value === "string" && value.trim()) config[key] = value.trim();
   }

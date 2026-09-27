@@ -10,6 +10,7 @@
 import { readDesktopVoiceConfig, type DesktopVoiceConfig } from "../desktopVoiceCore.js";
 import { createGlmProvider } from "./glm-provider.js";
 import { createWhisperProvider } from "./whisper-provider.js";
+import { createWhisperResidentProvider } from "./whisper-resident-provider.js";
 import type { AsrManagedResult, AsrProvider, AsrTranscribeOptions, AsrTranscribeResult } from "./types.js";
 
 export class AsrManagerError extends Error {
@@ -43,7 +44,7 @@ export class AsrManager {
     return new AsrManager(providers, fallbackProvider);
   }
 
-  /** 组装 manager：按当前用户配置创建可用 provider，whisper 恒为 fallback。 */
+  /** 组装 manager：按当前用户配置创建可用 provider，whisper spawn 恒为 fallback。 */
   static async create(config?: DesktopVoiceConfig): Promise<AsrManager> {
     const resolved = config ?? (await readDesktopVoiceConfig());
     const whisper = createWhisperProvider(resolved);
@@ -53,7 +54,9 @@ export class AsrManager {
       if ((await glm.health()).ok) providers.push(glm);
       // glm 未配置 key 时不注册：fallback 自动落到 whisper
     } else {
-      providers.push(whisper);
+      // 默认：常驻 whisper-server 首选（模型加载一次），spawn whisper 兜底
+      // （whisper-server 缺失/崩溃超限时 AsrManager 自动 fallback）
+      providers.push(createWhisperResidentProvider({ config: resolved, bin: resolved.whisperServerBin }));
     }
     // 未来：sensevoice / paraformer 在这里注册
     return new AsrManager(providers, whisper);
