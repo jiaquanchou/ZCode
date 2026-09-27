@@ -40,6 +40,10 @@ type DesktopBridgeWithVoice = {
 };
 
 const VOICE_PROCESSOR_BUFFER_SIZE = 4096;
+/** preview 滚动窗口：超过该时长后冻结前缀（已稳定文本不再重复识别）。 */
+const VOICE_PREVIEW_WINDOW_SECONDS = 30;
+/** 冻结边界向前的重叠秒数（衔接处上下文）。 */
+const VOICE_PREVIEW_OVERLAP_SECONDS = 2;
 /** 全量转写 prompt：技术词热表（动态项目词表为后续配置化预留）。 */
 const VOICE_TECH_WORDS_PROMPT =
   "WebSocket、PostgreSQL、Kubernetes、GitLab、GitHub、TypeScript、JavaScript、Electron、whisper、sherpa-onnx、SenseVoice、Silero、API、MySQL、Redis、Docker、Nginx、Claude Code、MCP。";
@@ -94,6 +98,9 @@ export function useVoiceRecording(): VoiceRecordingController {
   // 最近一次全量预览的结果缓存：stop 时「原文保留」的数据来源。
   const previewTextRef = useRef("");
   const previewCapturedAtRef = useRef(0);
+  // 冻结前缀：超过滚动窗口后，窗口起点之前的文本不再重复识别（第八阶段）。
+  const committedTextRef = useRef("");
+  const committedSecondsRef = useRef(0);
 
   useEffect(() => {
     transcriberRef.current = resolveDesktopVoiceTranscriber();
@@ -184,18 +191,25 @@ export function useVoiceRecording(): VoiceRecordingController {
     await openCapture(transcriber);
   }, [openCapture]);
 
-  /** 全量 PCM16（16k 重采样）。录音未开始/无样本返回 undefined。 */
-  const buildFullPcm = useCallback((): Int16Array | undefined => {
+  /** PCM16（16k 重采样）。fromSeconds 起（默认 0 = 全量）；无样本返回 undefined。 */
+  const buildRangePcm = useCallback((fromSeconds = 0): Int16Array | undefined => {
     const inputSampleRate = audioContextRef.current?.sampleRate;
     const recorded = mergeFloat32Chunks(chunksRef.current);
     if (recorded.length === 0 || inputSampleRate === undefined) return undefined;
-    return float32ToInt16(downsampleLinear(recorded, inputSampleRate, VOICE_TARGET_SAMPLE_RATE));
+    const fromFrame = Math.floor(fromSeconds * inputSampleRate);
+    const remaining = recorded.length - fromFrame;
+    if (remaining <= 0) return undefined;
+    const range = remaining === recorded.length ? recorded : recorded.subarray(fromFrame);
+    return float32ToInt16(downsampleLinear(range, inputSampleRate, VOICE_TARGET_SAMPLE_RATE));
   }, []);
+  const buildFullPcm = useCallback((): Int16Array | undefined => buildRangePcm(0), [buildRangePcm]);
 
   const cancel = useCallback(() => {
     generationRef.current += 1;
     chunksRef.current = [];
     rawFramesRef.current = 0;
+    committedTextRef.current = "";
+    committedSecondsRef.current = 0;
     teardownCapture();
     setPhase("idle");
     setElapsedSeconds(0);
@@ -206,6 +220,8 @@ export function useVoiceRecording(): VoiceRecordingController {
     generationRef.current += 1;
     chunksRef.current = [];
     rawFramesRef.current = 0;
+    committedTextRef.current = "";
+    committedSecondsRef.current = 0;
     teardownCapture();
     setEmptyResult(false);
     setError(null);
@@ -241,6 +257,8 @@ export function useVoiceRecording(): VoiceRecordingController {
     const previewCapturedAt = previewCapturedAtRef.current ?? 0;
     const capturedNow = capturedSeconds();
     const fullPcm = buildFullPcm();
+    committedTextRef.current = "";
+    committedSecondsRef.current = 0;
     teardownCapture();
     generationRef.current += 1;
     previewTextRef.current = "";
@@ -284,30 +302,48 @@ export function useVoiceRecording(): VoiceRecordingController {
     return { previewText, finalize };
   }, [buildFullPcm, capturedSeconds, openCapture, teardownCapture]);
 
-  const transcribeAll = useCallback(async (): Promise<VoiceTranscriptSegment[]> => {
-    const transcriber = transcriberRef.current;
-    if (!transcriber || previewBusyRef.current) return [];
-    const pcm = buildFullPcm();
-    if (!pcm || pcm.length < 1_600) return [];
-    previewBusyRef.current = true;
-    const run = generationRef.current;
-    try {
-      const segments = await transcriber(pcm, VOICE_TARGET_SAMPLE_RATE, VOICE_TECH_WORDS_PROMPT);
-      // 响应返回时录音已被取消/停止：过期预览直接丢弃。
-      if (run !== generationRef.current) return [];
-      previewTextRef.current = segments
-        .map((segment) => segment.text)
-        .join("")
-        .trim();
-      previewCapturedAtRef.current = pcm.length / VOICE_TARGET_SAMPLE_RATE;
-      return segments;
-    } catch {
-      // 预览是临时性的：单轮失败静默丢弃，权威文本由最终整段转写给出。
-      return [];
-    } finally {
-      previewBusyRef.current = false;
-    }
-  }, [buildFullPcm]);
+  const transcribeAll = useCallback(
+    async (fromSeconds = 0): Promise<VoiceTranscriptSegment[]> => {
+      const transcriber = transcriberRef.current;
+      if (!transcriber || previewBusyRef.current) return [];
+      const pcm = buildRangePcm(fromSeconds);
+      if (!pcm || pcm.length < 1_600) return [];
+      previewBusyRef.current = true;
+      const run = generationRef.current;
+      try {
+        const segments = await transcriber(pcm, VOICE_TARGET_SAMPLE_RATE, VOICE_TECH_WORDS_PROMPT);
+        // 响应返回时录音已被取消/停止：过期预览直接丢弃。
+        if (run !== generationRef.current) return [];
+        const windowText = segments
+          .map((segment) => segment.text)
+          .join("")
+          .trim();
+        const committed = committedTextRef.current;
+        previewTextRef.current = committed
+          ? windowText
+            ? `${committed} ${windowText}`
+            : committed
+          : windowText;
+        previewCapturedAtRef.current = fromSeconds + pcm.length / VOICE_TARGET_SAMPLE_RATE;
+        // 滚动窗口冻结：窗口跨度超限时，当前全文冻结为 committed，
+        // 之后只重转尾部（留 overlap 衔接），不再从 0 重跑。
+        if (previewCapturedAtRef.current - fromSeconds > VOICE_PREVIEW_WINDOW_SECONDS) {
+          committedTextRef.current = previewTextRef.current;
+          committedSecondsRef.current = Math.max(
+            committedSecondsRef.current,
+            previewCapturedAtRef.current - VOICE_PREVIEW_OVERLAP_SECONDS,
+          );
+        }
+        return segments;
+      } catch {
+        // 预览是临时性的：单轮失败静默丢弃，权威文本由最终整段转写给出。
+        return [];
+      } finally {
+        previewBusyRef.current = false;
+      }
+    },
+    [buildRangePcm],
+  );
 
   // 稳定引用：phase 等不变时保持同一对象，调用方的 useMemo 缓存才不会渲染旧状态。
   return useMemo(
