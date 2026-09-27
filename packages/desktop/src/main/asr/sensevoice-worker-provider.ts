@@ -241,11 +241,14 @@ export class SenseVoiceWorker {
 
 export function createSenseVoiceWorkerProvider(options: {
   config: { sensevoiceModelPath?: string };
-  workerModulePath: string;
+  /** worker .cjs 绝对路径；缺省解析为本目录同级的 sensevoice-worker.cjs。 */
+  workerModulePath?: string;
   threads?: number;
   useItn?: boolean;
 }): AsrProvider {
   const paths = resolveSenseVoiceModelPaths(options.config.sensevoiceModelPath);
+  const workerModulePath =
+    options.workerModulePath ?? new URL("./sensevoice-worker.cjs", import.meta.url).pathname;
   let worker: SenseVoiceWorker | undefined;
   let initError: string | undefined;
 
@@ -258,7 +261,7 @@ export function createSenseVoiceWorkerProvider(options: {
       if (!worker) {
         worker = new SenseVoiceWorker(
           { modelPath: paths.model, tokensPath: paths.tokens, threads: options.threads, useItn: options.useItn },
-          options.workerModulePath,
+          workerModulePath,
         );
       }
       // 静音预检在 AsrManager 上游（analyzePcm16）；worker 只管转写。

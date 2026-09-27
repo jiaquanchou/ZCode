@@ -11,10 +11,7 @@ import { readDesktopVoiceConfig, type DesktopVoiceConfig } from "../desktopVoice
 import { createGlmProvider } from "./glm-provider.js";
 import { createWhisperProvider } from "./whisper-provider.js";
 import { createWhisperResidentProvider } from "./whisper-resident-provider.js";
-import {
-  createSenseVoiceWorkerProvider,
-  defaultWorkerModulePath,
-} from "./sensevoice-worker-provider.js";
+import { createSenseVoiceWorkerProvider } from "./sensevoice-worker-provider.js";
 import type { AsrManagedResult, AsrProvider, AsrTranscribeOptions, AsrTranscribeResult } from "./types.js";
 
 export class AsrManagerError extends Error {
@@ -76,7 +73,7 @@ export class AsrManager {
       try {
         const sensevoice = createSenseVoiceWorkerProvider({
           config: resolved,
-          workerModulePath: defaultWorkerModulePath(),
+          workerModulePath: undefined,
           threads: 4,
         });
         const sensevoiceHealth = await sensevoice.health();
