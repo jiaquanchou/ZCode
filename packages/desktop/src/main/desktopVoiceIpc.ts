@@ -1,19 +1,28 @@
-import { rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { ipcMain } from "electron";
-import {
-  analyzePcm16,
-  createVoiceTempDirectory,
-  encodeWav,
-  isSilentPcm,
-  readDesktopVoiceConfig,
-  transcribeWithGlm,
-  transcribeWithWhisper,
-  VOICE_MAX_PCM_SAMPLES,
-  VOICE_MIN_PCM_SAMPLES,
-  VOICE_TRANSCRIBE_CHANNEL,
-  type DesktopWhisperSegment,
-} from "./desktopVoiceCore.js";
+import { readDesktopVoiceConfig } from "./desktopVoiceCore.js";
+import { AsrManager } from "./asr/asr-manager.js";
+import type { DesktopWhisperSegment } from "./desktopVoiceCore.js";
+
+export const VOICE_TRANSCRIBE_CHANNEL = "voice:transcribe";
+
+const VOICE_MAX_PCM_SAMPLES = 16_000 * 300; // 5 分钟上限
+const VOICE_MIN_PCM_SAMPLES = 1_600; // <0.1s 视为误触
+
+/**
+ * AsrManager 懒加载 + 配置热更新检测：manager 按创建时配置组装 provider；
+ * 当 config.asrProvider 与缓存不一致时重建（保持「改配置立即生效」的旧语义）。
+ */
+let asrManagerPromise: Promise<AsrManager> | undefined;
+let cachedProviderId: string | undefined;
+
+async function getAsrManager(): Promise<AsrManager> {
+  const config = await readDesktopVoiceConfig();
+  if (asrManagerPromise === undefined || cachedProviderId !== config.asrProvider) {
+    asrManagerPromise = AsrManager.create(config);
+    cachedProviderId = config.asrProvider;
+  }
+  return asrManagerPromise;
+}
 
 export function registerDesktopVoiceIpc(): void {
   ipcMain.handle(
@@ -31,35 +40,14 @@ export function registerDesktopVoiceIpc(): void {
         throw new Error("[voice] recording too long (max 5 minutes)");
       }
       if (pcm16.length < VOICE_MIN_PCM_SAMPLES) return [];
-      const health = analyzePcm16(pcm16);
-      if (isSilentPcm(health)) {
-        // 采集层就没拿到声音（错误设备/坏麦克风），不值得进任何 ASR。
-        console.info(
-          `[voice] silent capture rejected: rms=${health.rms.toExponential(2)} peak=${health.peak.toExponential(2)} zeroRatio=${health.zeroRatio.toFixed(4)}`,
-        );
-        return [];
-      }
-      const config = await readDesktopVoiceConfig();
-      if (config.asrProvider === "glm" && !config.glmApiKey) {
-        throw new Error("[voice] voice.glmApiKey is not set (~/.zcode/cli/config.json)");
-      }
-      if (config.asrProvider === "whisper-local" && !config.whisperModelPath) {
-        throw new Error("[voice] voice.whisperModelPath is not set (~/.zcode/cli/config.json)");
-      }
-      const directory = await createVoiceTempDirectory(process.env);
-      const wavPath = join(directory, "recording.wav");
-      try {
-        await writeFile(wavPath, encodeWav(pcm16, Math.floor(sampleRate)));
-        const durationSeconds = pcm16.length / Math.floor(sampleRate);
-        const promptText = typeof prompt === "string" ? prompt : undefined;
-        const segments =
-          config.asrProvider === "glm"
-            ? await transcribeWithGlm(config, wavPath, durationSeconds)
-            : await transcribeWithWhisper(config, wavPath, promptText);
-        return segments;
-      } finally {
-        await rm(directory, { force: true, recursive: true }).catch(() => undefined);
-      }
+
+      const manager = await getAsrManager();
+      const result = await manager.transcribe({
+        pcm16,
+        sampleRate,
+        prompt: typeof prompt === "string" ? prompt : undefined,
+      });
+      return result.segments;
     },
   );
 }
