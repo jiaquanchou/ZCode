@@ -11,6 +11,10 @@ import { readDesktopVoiceConfig, type DesktopVoiceConfig } from "../desktopVoice
 import { createGlmProvider } from "./glm-provider.js";
 import { createWhisperProvider } from "./whisper-provider.js";
 import { createWhisperResidentProvider } from "./whisper-resident-provider.js";
+import {
+  createSenseVoiceWorkerProvider,
+  defaultWorkerModulePath,
+} from "./sensevoice-worker-provider.js";
 import type { AsrManagedResult, AsrProvider, AsrTranscribeOptions, AsrTranscribeResult } from "./types.js";
 
 export class AsrManagerError extends Error {
@@ -32,16 +36,23 @@ export type AsrManagerStats = {
 export class AsrManager {
   private readonly providers = new Map<string, AsrProvider>();
   private readonly fallbackProvider: AsrProvider;
+  /** 配置的首选 provider id（whisper 场景解析为 whisper-resident）。 */
+  private readonly preferredId: string;
   private stats: AsrManagerStats = { calls: {}, failures: {}, fallbackCount: 0 };
 
-  private constructor(providers: AsrProvider[], fallbackProvider: AsrProvider) {
+  private constructor(providers: AsrProvider[], fallbackProvider: AsrProvider, preferredId: string) {
     for (const provider of providers) this.providers.set(provider.id, provider);
     this.fallbackProvider = fallbackProvider;
+    this.preferredId = preferredId;
   }
 
   /** 测试/扩展用：直接注入 provider 组与 fallback。 */
-  static withProviders(providers: AsrProvider[], fallbackProvider: AsrProvider): AsrManager {
-    return new AsrManager(providers, fallbackProvider);
+  static withProviders(
+    providers: AsrProvider[],
+    fallbackProvider: AsrProvider,
+    preferredId?: string,
+  ): AsrManager {
+    return new AsrManager(providers, fallbackProvider, preferredId ?? fallbackProvider.id);
   }
 
   /** 组装 manager：按当前用户配置创建可用 provider，whisper spawn 恒为 fallback。 */
@@ -58,8 +69,26 @@ export class AsrManager {
       // （whisper-server 缺失/崩溃超限时 AsrManager 自动 fallback）
       providers.push(createWhisperResidentProvider({ config: resolved, bin: resolved.whisperServerBin }));
     }
-    // 未来：sensevoice / paraformer 在这里注册
-    return new AsrManager(providers, whisper);
+    // sensevoice：模型存在即注册（asrProvider=sensevoice 时为首选；
+    // 质量对比期也可通过 provider 参数点名使用）。健康检查通过后入表。
+    let preferredId = resolved.asrProvider === "glm" ? "glm" : "whisper-resident";
+    if (resolved.asrProvider === "sensevoice" || resolved.asrProvider === "whisper-local" || resolved.asrProvider === "glm") {
+      try {
+        const sensevoice = createSenseVoiceWorkerProvider({
+          config: resolved,
+          workerModulePath: defaultWorkerModulePath(),
+          threads: 4,
+        });
+        const sensevoiceHealth = await sensevoice.health();
+        if (sensevoiceHealth.ok) {
+          providers.push(sensevoice);
+          if (resolved.asrProvider === "sensevoice") preferredId = "sensevoice";
+        }
+      } catch {
+        // 模型缺失等：跳过注册，不影响其他 provider
+      }
+    }
+    return new AsrManager(providers, whisper, preferredId);
   }
 
   get statsSnapshot(): AsrManagerStats {
@@ -79,7 +108,7 @@ export class AsrManager {
   async transcribe(options: AsrTranscribeOptions & { provider?: string }): Promise<AsrManagedResult> {
     const preferred = options.provider
       ? this.providers.get(options.provider)
-      : this.providers.get("whisper-local") ?? [...this.providers.values()][0];
+      : this.providers.get(this.preferredId);
 
     if (!preferred) {
       return this.runWithFallback(options, undefined);
