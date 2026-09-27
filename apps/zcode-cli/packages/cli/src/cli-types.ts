@@ -1,4 +1,4 @@
-import type { TuiReadClipboardImage, TuiWriteClipboardText } from "@zcode/tui";
+import type { TuiReadClipboardImage, TuiVoiceInput, TuiWriteClipboardText } from "@zcode/tui";
 import type { UiLocale } from "@zcode/i18n";
 import type { Logger } from "@zcode/contracts";
 import type {
@@ -97,6 +97,7 @@ export interface RunDependencies extends PluginsCommandOverrides {
   listSkills?: (options: ListZCodeSkillsOptions) => ReturnType<typeof listZCodeSkills>;
   logger?: Logger;
   readClipboardImage?: TuiReadClipboardImage;
+  voiceInput?: TuiVoiceInput;
   writeClipboardText?: TuiWriteClipboardText;
   resolveLatestSession?: (
     options: ResolveLatestSessionOptions,

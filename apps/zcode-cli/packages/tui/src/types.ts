@@ -63,6 +63,25 @@ export type TuiReadClipboardImage = (options?: {
 
 export type TuiWriteClipboardText = (text: string) => Promise<void> | void;
 
+export type TuiVoiceErrorCode =
+  | "not_configured"
+  | "start_failed"
+  | "transcribe_failed"
+  | "unsupported";
+
+export type TuiVoiceInputError = Error & { code: TuiVoiceErrorCode };
+
+export type TuiVoiceSession = {
+  /** Stop recording, transcribe, clean up, and return the transcript text. */
+  stop(): Promise<string>;
+  /** Discard the recording without transcribing; safe to call multiple times. */
+  cancel(): Promise<void>;
+};
+
+export type TuiVoiceInput = {
+  beginSession(): Promise<TuiVoiceSession>;
+};
+
 export type TuiWorkspacePathKind = "directory" | "file";
 
 export type TuiWorkspacePathSuggestion = {
@@ -323,6 +342,7 @@ export type TuiOptions = {
   replayWorkflowRuns?: TuiReplayWorkflowRuns;
   getMainSessionId?: TuiGetMainSessionId;
   readClipboardImage?: TuiReadClipboardImage;
+  voiceInput?: TuiVoiceInput;
   recallPreviousInput?: TuiRecallPreviousInput;
   sendInput?: TuiSendInput;
   setMode?: TuiSetMode;

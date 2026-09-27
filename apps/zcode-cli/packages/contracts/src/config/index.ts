@@ -77,6 +77,9 @@ export const ConfigKey = {
   // UI
   UiLocale: "ui.locale",
   UiTheme: "ui.theme",
+
+  // Voice input（整体对象，与 hooks 同模式）
+  Voice: "voice",
 } as const;
 
 export type ConfigKey = (typeof ConfigKey)[keyof typeof ConfigKey];
@@ -148,7 +151,9 @@ export type ConfigValue<K extends ConfigKey> = K extends "modelStream.idleTimeou
                                                 ? UiLocale
                                                 : K extends "ui.theme"
                                                   ? UiThemePreference
-                                                  : unknown;
+                                                  : K extends "voice"
+                                                    ? RuntimeConfig["voice"]
+                                                    : unknown;
 
 // ============================================================
 // Config Scope
@@ -255,6 +260,17 @@ export interface RuntimeConfig {
     locale: UiLocale;
     theme: UiThemePreference;
   };
+  voice: {
+    asrProvider: VoiceAsrProvider;
+    language: string;
+    soxBin: string;
+    whisperBin: string;
+    whisperModelPath?: string;
+    vadModelPath?: string;
+    glmApiKey?: string;
+    glmBaseUrl: string;
+    glmModel: string;
+  };
 }
 
 export interface RuntimeConfigPatch {
@@ -274,12 +290,14 @@ export interface RuntimeConfigPatch {
   modelAnomalyGuard?: Partial<RuntimeConfig["modelAnomalyGuard"]>;
   hooks?: HooksRuntimeConfigPatch;
   ui?: Partial<RuntimeConfig["ui"]>;
+  voice?: Partial<RuntimeConfig["voice"]>;
 }
 
 export type SupportedLocale = "en-US" | "zh-CN";
 export type UiLocale = SupportedLocale | "auto";
 export type UiThemeMode = "dark" | "light";
 export type UiThemePreference = UiThemeMode | "auto";
+export type VoiceAsrProvider = "whisper-local" | "glm";
 
 export const DEFAULT_MODEL_STREAM_IDLE_TIMEOUT_MS = 600_000;
 
@@ -355,6 +373,14 @@ export const DefaultRuntimeConfig: RuntimeConfig = {
   ui: {
     locale: "en-US",
     theme: "auto",
+  },
+  voice: {
+    asrProvider: "whisper-local",
+    glmBaseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    glmModel: "glm-asr",
+    language: "zh",
+    soxBin: "sox",
+    whisperBin: "whisper-cli",
   },
 };
 

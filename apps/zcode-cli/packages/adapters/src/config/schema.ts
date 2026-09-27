@@ -214,6 +214,18 @@ const uiSchema = z.object({
   theme: z.enum(["auto", "dark", "light"]).optional(),
 });
 
+const voiceSchema = z.object({
+  asrProvider: z.enum(["whisper-local", "glm"]).optional(),
+  glmApiKey: z.string().min(1).optional(),
+  glmBaseUrl: z.string().min(1).optional(),
+  glmModel: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  soxBin: z.string().min(1).optional(),
+  whisperBin: z.string().min(1).optional(),
+  whisperModelPath: z.string().min(1).optional(),
+  vadModelPath: z.string().min(1).optional(),
+});
+
 const toolConcurrencySchema = z.object({
   maxConcurrency: positiveNumberSchema.optional(),
 });
@@ -299,6 +311,7 @@ export const ZCodeConfigFileSchema = z
     command: skillCommandOverridesSchema.optional(),
     logging: loggingSchema.optional(),
     ui: uiSchema.optional(),
+    voice: voiceSchema.optional(),
     toolConcurrency: toolConcurrencySchema.optional(),
     modelAnomalyGuard: modelAnomalyGuardSchema.optional(),
     hooks: hooksSchema.optional(),
@@ -416,6 +429,7 @@ function parsedConfigFileToRuntimePatch(parsed: ZCodeConfigFile): RuntimeConfigP
   if (parsed.command) config.commandOverrides = parsed.command;
   if (parsed.logging) config.logging = parsed.logging;
   if (parsed.ui) config.ui = parsed.ui;
+  if (parsed.voice) config.voice = parsed.voice;
   if (parsed.toolConcurrency) config.toolConcurrency = parsed.toolConcurrency;
   if (parsed.modelAnomalyGuard) config.modelAnomalyGuard = parsed.modelAnomalyGuard;
   if (parsed.hooks) config.hooks = parsed.hooks;

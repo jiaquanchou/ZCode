@@ -36,6 +36,7 @@ import { useSessionEventApplier } from "./app-session-event-handler.js";
 import { useTuiWorkflowRuns } from "./app-workflow-controller.js";
 import { useTuiApplyResult } from "./app-result.js";
 import { useSubagents } from "./app-subagents.js";
+import { useVoiceInput } from "./app-voice-input.js";
 import type { TuiOptions } from "./types.js";
 
 type TuiAppProps = {
@@ -312,6 +313,17 @@ export function TuiApp({
     setStatus,
   });
 
+  const voiceInput = useVoiceInput({
+    busy,
+    copy: copy.tui,
+    getDraftValue: () => draftRef.current,
+    inputEditorRef,
+    options,
+    setDraftValue,
+    setStatus,
+    setStatusDetails,
+  });
+
   const copyCurrentSelection = useCallback((): boolean => {
     if (!hasCopyableSelection()) return false;
     void copySelection().then((result) => {
@@ -340,6 +352,7 @@ export function TuiApp({
     filteredModeOptions: modeCommand.filteredOptions,
     filteredModelOptions: modelCommand.filteredOptions,
     handleFileMentionKey: fileMentions.handleKey,
+    handleVoiceKey: voiceInput.handleVoiceKey,
     onExit,
     pasteClipboardImage,
     recallNextInput,
@@ -413,6 +426,7 @@ export function TuiApp({
     traceId,
     terminalWidth: sidebar.terminalWidth,
     usage,
+    voiceStatus: voiceInput.voiceStatus,
     workflowCardsByToolCallId: workflowRuns.cardsByToolCallId,
     expandedWorkflowRunIds: workflowRuns.expandedRunIds,
   });

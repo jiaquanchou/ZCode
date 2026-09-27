@@ -8,6 +8,8 @@ import { listCustomCommandsForTui, loadInitialTuiSessionMetadata } from "./tui-c
 import { createTuiSubmitPrompt } from "./tui-prompt-handler.js";
 import { loadTuiRuntime } from "./tui-runtime-loader.js";
 import { resolveTuiStartupLocale } from "./tui-startup-locale.js";
+import { resolveTuiVoiceConfig } from "./tui-voice-config.js";
+import { createNodeVoiceInput, disposeActiveVoiceSessions } from "./voice-input.js";
 import { createWorkspacePathSuggestionProvider } from "./tui-workspace-paths.js";
 import { resolveWorkspaceGitBranch } from "./tui-workspace-git.js";
 import { createCliModeState, currentCliMode } from "./tui-command-state.js";
@@ -50,6 +52,7 @@ export const runTuiCommand = async (
     const unregisterShutdownHandlers = registerCliShutdownHandlers({
       cleanup: async () => {
         await promptHandler.close?.();
+        await disposeActiveVoiceSessions();
       },
       cleanupTimeoutMs: deps.shutdownCleanupTimeoutMs,
       exitProcess: deps.exitProcess,
@@ -84,6 +87,12 @@ export const runTuiCommand = async (
         workspaceDirectory,
         noColor: options.noColor,
         readClipboardImage: deps.readClipboardImage ?? createNodeClipboardImageReader(),
+        voiceInput:
+          deps.voiceInput ??
+          createNodeVoiceInput({
+            config: resolveTuiVoiceConfig({ deps, options, workingDirectory: workspaceDirectory }),
+            env,
+          }),
         listModelOptions: promptHandler.listModelOptions,
         listWorkspacePathSuggestions: createWorkspacePathSuggestionProvider({
           workspaceDirectory,

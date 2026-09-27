@@ -212,6 +212,10 @@ class ConfigStore {
     if (config.ui?.theme !== undefined) {
       this.set(ConfigKey.UiTheme, config.ui.theme, scope);
     }
+    if (config.voice) {
+      const previous = this.get(ConfigKey.Voice) ?? DefaultConfig.voice;
+      this.set(ConfigKey.Voice, { ...previous, ...config.voice }, scope);
+    }
   }
 
   subscribe<K extends ConfigKey>(key: K, handler: Handler<K>): Unsubscribe {
@@ -333,6 +337,10 @@ export class ConfigPortImpl implements ConfigPort {
         locale: this.store.get(ConfigKey.UiLocale) ?? DefaultConfig.ui.locale,
         theme: this.store.get(ConfigKey.UiTheme) ?? DefaultConfig.ui.theme,
       },
+      voice: {
+        ...DefaultConfig.voice,
+        ...(this.store.get(ConfigKey.Voice) ?? DefaultConfig.voice),
+      },
     };
   }
 
@@ -443,6 +451,8 @@ function getDefaultValue(key: ConfigKey): unknown {
       return defaults.ui.locale;
     case ConfigKey.UiTheme:
       return defaults.ui.theme;
+    case ConfigKey.Voice:
+      return defaults.voice;
     default:
       return undefined;
   }
