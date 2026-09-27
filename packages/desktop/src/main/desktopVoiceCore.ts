@@ -35,7 +35,7 @@ const PCM_SILENCE_RMS = 1e-4;
 const PCM_SILENCE_ZERO_RATIO = 0.999;
 
 export type DesktopVoiceConfig = {
-  asrProvider: "whisper-local" | "glm";
+  asrProvider: "whisper-local" | "glm" | "sensevoice" | "paraformer";
   glmApiKey?: string;
   glmBaseUrl: string;
   glmModel: string;
@@ -45,6 +45,8 @@ export type DesktopVoiceConfig = {
   vadModelPath?: string;
   /** whisper-server（常驻模式）二进制，可选，默认 whisper-server。 */
   whisperServerBin?: string;
+  /** SenseVoice 模型目录（含 model.int8.onnx + tokens.txt），可选。 */
+  sensevoiceModelPath?: string;
 };
 
 const DEFAULT_VOICE_CONFIG: DesktopVoiceConfig = {
@@ -77,7 +79,12 @@ export async function readDesktopVoiceConfig(
   if (typeof voice !== "object" || voice === null) return { ...DEFAULT_VOICE_CONFIG };
   const source = voice as Record<string, unknown>;
   const config: DesktopVoiceConfig = { ...DEFAULT_VOICE_CONFIG };
-  if (source.asrProvider === "glm" || source.asrProvider === "whisper-local") {
+  if (
+    source.asrProvider === "glm" ||
+    source.asrProvider === "whisper-local" ||
+    source.asrProvider === "sensevoice" ||
+    source.asrProvider === "paraformer"
+  ) {
     config.asrProvider = source.asrProvider;
   }
   for (const key of ["glmApiKey", "glmBaseUrl", "glmModel", "language", "whisperBin", "whisperServerBin"] as const) {
@@ -89,6 +96,9 @@ export async function readDesktopVoiceConfig(
   }
   if (typeof source.vadModelPath === "string" && source.vadModelPath.trim()) {
     config.vadModelPath = source.vadModelPath.trim();
+  }
+  if (typeof source.sensevoiceModelPath === "string" && source.sensevoiceModelPath.trim()) {
+    config.sensevoiceModelPath = source.sensevoiceModelPath.trim();
   }
   return config;
 }

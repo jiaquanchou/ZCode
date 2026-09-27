@@ -1,0 +1,249 @@
+{
+  "provider": "sensevoice",
+  "engine": {
+    "name": "SenseVoiceSmall",
+    "model": "/Users/enhanced/.dsh/speech-to-text/sensevoice/models/sensevoice-onnx",
+    "quantization": "int8",
+    "runtime": "sherpa-onnx-node@1.13.8 (itn=on, threads=4)"
+  },
+  "generatedAt": "2026-09-27T18:03:06.526Z",
+  "counts": {
+    "total": 6,
+    "coding_terms": 3,
+    "general_zh": 1,
+    "long_sentence": 1,
+    "silence": 1
+  },
+  "samples": [
+    {
+      "id": "001",
+      "category": "coding_terms",
+      "hypothesis": "我们使用postg SQL作为数据库web socket连接通过thinks转发。",
+      "reference": "我们使用 PostgreSQL 作为数据库，WebSocket 连接通过 Nginx 转发。",
+      "rawCer": 0.32608695652173914,
+      "normalizedCer": 0.15384615384615385,
+      "editDistance": 6,
+      "referenceLength": 39,
+      "referenceTerms": [
+        "PostgreSQL",
+        "WebSocket",
+        "Nginx"
+      ],
+      "hitTerms": [
+        "WebSocket"
+      ],
+      "missedTerms": [
+        "PostgreSQL",
+        "Nginx"
+      ],
+      "recognizedTerms": [
+        "WebSocket"
+      ],
+      "hypothesisTerms": [
+        "WebSocket"
+      ],
+      "technicalTermPrecision": 1,
+      "audioSeconds": 7.3994375,
+      "inferenceSeconds": 0.48574070799999997,
+      "wallSeconds": 0.48574070799999997,
+      "rtf": 0.06564562617090826,
+      "rssMb": 0,
+      "peakRssMb": 0
+    },
+    {
+      "id": "002",
+      "category": "coding_terms",
+      "hypothesis": "这个服务部署在cubbernet上，用readies做缓存。",
+      "reference": "这个服务部署在 Kubernetes 上，用 Redis 做缓存。",
+      "rawCer": 0.3333333333333333,
+      "normalizedCer": 0.2222222222222222,
+      "editDistance": 6,
+      "referenceLength": 27,
+      "referenceTerms": [
+        "Kubernetes",
+        "Redis"
+      ],
+      "hitTerms": [],
+      "missedTerms": [
+        "Kubernetes",
+        "Redis"
+      ],
+      "recognizedTerms": [],
+      "hypothesisTerms": [],
+      "technicalTermPrecision": 0,
+      "audioSeconds": 4.2246875,
+      "inferenceSeconds": 0.043600749999999945,
+      "wallSeconds": 0.043600749999999945,
+      "rtf": 0.010320467490198966,
+      "rssMb": 0,
+      "peakRssMb": 0
+    },
+    {
+      "id": "003",
+      "category": "general_zh",
+      "hypothesis": "帮我检查一下这个个服务为什么连接会断开。",
+      "reference": "帮我检查一下这个 Go 服务为什么连接会断开。",
+      "rawCer": 0.17391304347826086,
+      "normalizedCer": 0.1,
+      "editDistance": 2,
+      "referenceLength": 20,
+      "referenceTerms": [
+        "Go"
+      ],
+      "hitTerms": [],
+      "missedTerms": [
+        "Go"
+      ],
+      "recognizedTerms": [],
+      "hypothesisTerms": [],
+      "technicalTermPrecision": 0,
+      "audioSeconds": 3.9705625,
+      "inferenceSeconds": 0.04340320799999995,
+      "wallSeconds": 0.04340320799999995,
+      "rtf": 0.01093124916180011,
+      "rssMb": 0,
+      "peakRssMb": 0
+    },
+    {
+      "id": "004",
+      "category": "coding_terms",
+      "hypothesis": "cloth coat可以通过MCP调用工具。",
+      "reference": "Claude Code 可以通过 MCP 调用工具。",
+      "rawCer": 0.4230769230769231,
+      "normalizedCer": 0.2857142857142857,
+      "editDistance": 6,
+      "referenceLength": 21,
+      "referenceTerms": [
+        "Claude Code",
+        "MCP"
+      ],
+      "hitTerms": [
+        "MCP"
+      ],
+      "missedTerms": [
+        "Claude Code"
+      ],
+      "recognizedTerms": [
+        "MCP"
+      ],
+      "hypothesisTerms": [
+        "MCP"
+      ],
+      "technicalTermPrecision": 1,
+      "audioSeconds": 4.1721875,
+      "inferenceSeconds": 0.04243279099999995,
+      "wallSeconds": 0.04243279099999995,
+      "rtf": 0.010170394067860074,
+      "rssMb": 0,
+      "peakRssMb": 0
+    },
+    {
+      "id": "005",
+      "category": "long_sentence",
+      "hypothesis": "帮我检查一下这个go服务，为什么web socket经过以后连接会断开，再看一下postg sqL连接池配置以及kuubernet部署里面的reediness probe有没有问题。",
+      "reference": "帮我检查一下这个 Go 服务为什么 WebSocket 经过 Nginx 以后连接会断开，再看一下 PostgreSQL 连接池配置，以及 Kubernetes 部署里面的 readiness probe 有没有问题。",
+      "rawCer": 0.29357798165137616,
+      "normalizedCer": 0.11827956989247312,
+      "editDistance": 11,
+      "referenceLength": 93,
+      "referenceTerms": [
+        "Go",
+        "WebSocket",
+        "Nginx",
+        "PostgreSQL",
+        "Kubernetes",
+        "readiness probe"
+      ],
+      "hitTerms": [
+        "Go",
+        "WebSocket"
+      ],
+      "missedTerms": [
+        "Nginx",
+        "PostgreSQL",
+        "Kubernetes",
+        "readiness probe"
+      ],
+      "recognizedTerms": [
+        "Go",
+        "WebSocket"
+      ],
+      "hypothesisTerms": [
+        "Go",
+        "WebSocket"
+      ],
+      "technicalTermPrecision": 1,
+      "audioSeconds": 15.615375,
+      "inferenceSeconds": 0.13479762499999992,
+      "wallSeconds": 0.13479762499999992,
+      "rtf": 0.008632365537170892,
+      "rssMb": 0,
+      "peakRssMb": 0
+    },
+    {
+      "id": "006",
+      "category": "silence",
+      "hypothesis": "그.",
+      "reference": "",
+      "rawCer": 1,
+      "normalizedCer": 1,
+      "editDistance": 1,
+      "referenceLength": 0,
+      "referenceTerms": [],
+      "hitTerms": [],
+      "missedTerms": [],
+      "recognizedTerms": [],
+      "hypothesisTerms": [],
+      "technicalTermPrecision": 0,
+      "audioSeconds": 3,
+      "inferenceSeconds": 0.03459416699999997,
+      "wallSeconds": 0.03459416699999997,
+      "rtf": 0.011531388999999989,
+      "rssMb": 0,
+      "peakRssMb": 0
+    }
+  ],
+  "aggregate": {
+    "rawCer": 0.4249980396769388,
+    "normalizedCer": 0.31334370527918914,
+    "technicalTermRecall": 0.2857142857142857,
+    "technicalTermPrecision": 0.5,
+    "latencyP50": 0.04340320799999995,
+    "latencyP95": 0.48574070799999997,
+    "meanRtf": 0.01953858190465638,
+    "meanRssMb": 0,
+    "peakRssMb": 0,
+    "coldStartSeconds": 0.48574070799999997,
+    "warmInferenceSeconds": 0.13076154149999994
+  },
+  "byCategory": {
+    "coding_terms": {
+      "count": 3,
+      "rawCer": 0.3608324043106652,
+      "normalizedCer": 0.2205942205942206,
+      "technicalTermRecall": 0.2857142857142857,
+      "technicalTermPrecision": 0.6666666666666666
+    },
+    "general_zh": {
+      "count": 1,
+      "rawCer": 0.17391304347826086,
+      "normalizedCer": 0.1,
+      "technicalTermRecall": 0,
+      "technicalTermPrecision": 0
+    },
+    "long_sentence": {
+      "count": 1,
+      "rawCer": 0.29357798165137616,
+      "normalizedCer": 0.11827956989247312,
+      "technicalTermRecall": 0.3333333333333333,
+      "technicalTermPrecision": 1
+    },
+    "silence": {
+      "count": 1,
+      "rawCer": 1,
+      "normalizedCer": 1,
+      "technicalTermRecall": 0,
+      "technicalTermPrecision": 0
+    }
+  }
+}

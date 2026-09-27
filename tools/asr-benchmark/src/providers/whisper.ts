@@ -147,5 +147,8 @@ export function createWhisperProvider(options: WhisperProviderOptions): AsrBench
         loadSeconds: result.loadSeconds,
       };
     },
+    async dispose(): Promise<void> {
+      // spawn 模式无常驻状态
+    },
   };
 }

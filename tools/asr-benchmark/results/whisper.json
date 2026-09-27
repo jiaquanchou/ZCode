@@ -5,7 +5,7 @@
     "model": "/Users/enhanced/opt/scratch/zcode-voice/models/ggml-large-v3-turbo-q5_0.bin",
     "runtime": "whisper-cli (Metal)"
   },
-  "generatedAt": "2026-09-27T15:59:07.431Z",
+  "generatedAt": "2026-09-27T18:03:05.641Z",
   "counts": {
     "total": 6,
     "coding_terms": 3,
@@ -45,11 +45,11 @@
       ],
       "technicalTermPrecision": 1,
       "audioSeconds": 7.3994375,
-      "inferenceSeconds": 1.02678,
-      "wallSeconds": 1.16185975,
-      "rtf": 0.13876460203900634,
-      "rssMb": 809.828125,
-      "peakRssMb": 809.828125
+      "inferenceSeconds": 0.97249,
+      "wallSeconds": 1.095970583,
+      "rtf": 0.13142755783801133,
+      "rssMb": 816.5625,
+      "peakRssMb": 816.5625
     },
     {
       "id": "002",
@@ -79,11 +79,11 @@
       ],
       "technicalTermPrecision": 1,
       "audioSeconds": 4.2246875,
-      "inferenceSeconds": 0.6898500000000001,
-      "wallSeconds": 0.746185042,
-      "rtf": 0.16329018418522082,
-      "rssMb": 839.890625,
-      "peakRssMb": 839.890625
+      "inferenceSeconds": 0.6820700000000001,
+      "wallSeconds": 0.7355488330000001,
+      "rtf": 0.16144862785709005,
+      "rssMb": 838.484375,
+      "peakRssMb": 838.484375
     },
     {
       "id": "003",
@@ -105,11 +105,11 @@
       "hypothesisTerms": [],
       "technicalTermPrecision": 0,
       "audioSeconds": 3.9705625,
-      "inferenceSeconds": 0.6990299999999999,
-      "wallSeconds": 0.7565193750000001,
-      "rtf": 0.17605314108517367,
-      "rssMb": 839.671875,
-      "peakRssMb": 839.671875
+      "inferenceSeconds": 0.67589,
+      "wallSeconds": 0.7315632499999999,
+      "rtf": 0.17022525145996314,
+      "rssMb": 840.0625,
+      "peakRssMb": 840.0625
     },
     {
       "id": "004",
@@ -138,11 +138,11 @@
       ],
       "technicalTermPrecision": 1,
       "audioSeconds": 4.1721875,
-      "inferenceSeconds": 0.68014,
-      "wallSeconds": 0.7428344170000001,
-      "rtf": 0.16301760167777696,
-      "rssMb": 839.359375,
-      "peakRssMb": 839.359375
+      "inferenceSeconds": 0.65639,
+      "wallSeconds": 0.705468042,
+      "rtf": 0.15732514418395627,
+      "rssMb": 839.15625,
+      "peakRssMb": 839.15625
     },
     {
       "id": "005",
@@ -187,11 +187,11 @@
       ],
       "technicalTermPrecision": 1,
       "audioSeconds": 15.615375,
-      "inferenceSeconds": 0.87934,
-      "wallSeconds": 0.9344009580000002,
-      "rtf": 0.05631244846825645,
-      "rssMb": 841.125,
-      "peakRssMb": 841.125
+      "inferenceSeconds": 0.8466699999999999,
+      "wallSeconds": 0.8984044579999996,
+      "rtf": 0.05422027969229044,
+      "rssMb": 840.328125,
+      "peakRssMb": 840.328125
     },
     {
       "id": "006",
@@ -209,11 +209,11 @@
       "hypothesisTerms": [],
       "technicalTermPrecision": 0,
       "audioSeconds": 3,
-      "inferenceSeconds": 0.16149000000000002,
-      "wallSeconds": 0.2150684170000004,
-      "rtf": 0.05383000000000001,
-      "rssMb": 755,
-      "peakRssMb": 755
+      "inferenceSeconds": 0.14951,
+      "wallSeconds": 0.20030845799999952,
+      "rtf": 0.04983666666666667,
+      "rssMb": 754.3125,
+      "peakRssMb": 754.3125
     }
   ],
   "aggregate": {
@@ -221,13 +221,13 @@
     "normalizedCer": 0.04039741620386782,
     "technicalTermRecall": 0.7142857142857143,
     "technicalTermPrecision": 0.6666666666666666,
-    "latencyP50": 0.746185042,
-    "latencyP95": 1.16185975,
-    "meanRtf": 0.12521132957590572,
-    "meanRssMb": 820.8125,
-    "peakRssMb": 841.125,
-    "coldStartSeconds": 1.16185975,
-    "warmInferenceSeconds": 0.6894383333333333
+    "latencyP50": 0.7315632499999999,
+    "latencyP95": 1.095970583,
+    "meanRtf": 0.12074725461632967,
+    "meanRssMb": 821.484375,
+    "peakRssMb": 840.328125,
+    "coldStartSeconds": 1.095970583,
+    "warmInferenceSeconds": 0.6638366666666666
   },
   "byCategory": {
     "coding_terms": {

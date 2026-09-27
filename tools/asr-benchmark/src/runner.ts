@@ -56,7 +56,7 @@ export async function wavDurationSeconds(wavPath: string): Promise<number> {
   return bytesPerSecond > 0 ? dataSize / bytesPerSecond : 0;
 }
 
-function createProvider(name: string, args: Record<string, string | boolean>): AsrBenchmarkProvider {
+async function createProvider(name: string, args: Record<string, string | boolean>): Promise<AsrBenchmarkProvider> {
   switch (name) {
     case "whisper":
       return createWhisperProvider({
@@ -67,10 +67,25 @@ function createProvider(name: string, args: Record<string, string | boolean>): A
         threads: 8,
         segmentTimestamps: true,
       });
-    case "sensevoice":
-      throw new Error("sensevoice provider 尚未实现（第五阶段 PoC）");
-    case "paraformer":
-      throw new Error("paraformer provider 尚未实现（第六阶段 PoC）");
+    case "sensevoice": {
+      const { createSenseVoiceBenchmarkProvider } = await import("./providers/sensevoice.js");
+      return createSenseVoiceBenchmarkProvider({
+        modelDir: process.env.SENSEVOICE_MODEL_DIR ?? "/Users/enhanced/.dsh/speech-to-text/sensevoice/models/sensevoice-onnx",
+        workerModulePath: "/Users/enhanced/code/opensource/ZCode/packages/desktop/src/main/asr/sensevoice-worker.cjs",
+        threads: 4,
+        useItn: true,
+      });
+    }
+    case "paraformer": {
+      const { createParaformerBenchmarkProvider } = await import("./providers/paraformer.js");
+      return createParaformerBenchmarkProvider({
+        modelDir: process.env.PARAFORMER_MODEL_DIR ?? "/Users/enhanced/opt/scratch/zcode-voice/models/paraformer-zh",
+        workerModulePath: "/Users/enhanced/code/opensource/ZCode/packages/desktop/src/main/asr/sensevoice-worker.cjs",
+        threads: 4,
+        hotwordsFile: (args.hotwords as string) || undefined,
+        hotwordsScore: args["hotwords-score"] ? Number(args["hotwords-score"]) : 1.5,
+      });
+    }
     default:
       throw new Error(`未知 provider: ${name}`);
   }
@@ -83,7 +98,7 @@ export async function run(
   outDir: string,
   args: Record<string, string | boolean>,
 ): Promise<ProviderBenchmark> {
-  const provider = createProvider(providerName, args);
+  const provider = await createProvider(providerName, args);
   const refs: ReferenceItem[] = [];
   const refsRaw = await readFile(refsPath, "utf8");
   for (const line of refsRaw.split("\n")) {
@@ -202,6 +217,7 @@ export async function run(
     "utf8",
   );
 
+  await provider.dispose().catch(() => undefined);
   console.info(`\n[${provider.name}] 完成：${samples.length} 条 → ${jsonPath}`);
   const agg = benchmark.aggregate;
   console.info(
