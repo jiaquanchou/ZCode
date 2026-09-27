@@ -226,6 +226,7 @@ import {
   stopDesktopResourceTelemetry,
 } from "./desktopResourceTelemetry.js";
 import { registerRendererHeapSampleIpc } from "./processResourceRendererHeapSource.js";
+import { registerDesktopVoiceIpc } from "./desktopVoiceIpc.js";
 import {
   registerDesktopZCodeDataSizeTelemetry,
   stopDesktopZCodeDataSizeTelemetry,
@@ -2164,6 +2165,8 @@ app.whenReady().then(async () => {
     env: process.env,
     logger,
   });
+
+  registerDesktopVoiceIpc();
 
   registerRemoteIpcHandlers({
     logger,

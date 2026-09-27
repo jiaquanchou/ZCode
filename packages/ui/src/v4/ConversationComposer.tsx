@@ -86,6 +86,8 @@ import {
   type ChatMediaAttachmentPreviewTarget,
 } from "@/ChatMediaAttachmentPreviewDialog.js";
 import type { LexicalChatInputHandle } from "@/LexicalChatInput.js";
+import { useVoiceRecording } from "@/v4/composer/useVoiceRecording.js";
+import { VoiceMicButton, VoiceRecordingPanel } from "@/v4/composer/VoiceInputControl.js";
 import { ChatPromptEditor } from "@/prompt-editor/ChatPromptEditor.js";
 import { usePromptEditorDragState } from "@/prompt-editor/usePromptEditorDragState.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
@@ -602,6 +604,33 @@ function ConversationComposerImpl({
   const activeShareContext = resolveAttachableShareContext(snapshot?.sharedContextImport);
   const pendingShareContext = activeShareContext?.status === "pending" ? activeShareContext : null;
   const inputApiRef = useRef<LexicalChatInputHandle | null>(null);
+  // 语音输入：hook 持有录音/转写状态；转写文本追加进编辑器，「发送」路径
+  // 复用 finish() 返回值并入当次提交（见 handleSendButtonClick 拦截）。
+  const voice = useVoiceRecording();
+  const appendVoiceTranscript = useCallback((text: string) => {
+    inputApiRef.current?.appendText(text);
+    inputApiRef.current?.focus();
+  }, []);
+  const handleVoiceStart = useCallback(() => {
+    void voice.start();
+  }, [voice]);
+  // ■ 完成转写：对齐成熟产品「原文保留、后台快速替换」——点击瞬间把已蹦
+  // 出的预览文本原样搬进输入框（字不消失），权威转写在后台完成，结果与
+  // 预览不同时原地静默替换。
+  const handleVoiceFinish = useCallback(() => {
+    const { previewText, finalize } = voice.stop();
+    if (previewText) appendVoiceTranscript(previewText);
+    void finalize.then((finalText) => {
+      if (!finalText || finalText === previewText) return;
+      const markdown = inputApiRef.current?.getMarkdown() ?? "";
+      const replaced = previewText ? markdown.replace(previewText, finalText) : markdown;
+      if (replaced !== markdown) inputApiRef.current?.setText(replaced);
+      else if (!previewText) inputApiRef.current?.appendText(finalText);
+    });
+  }, [appendVoiceTranscript, inputApiRef, voice]);
+  const handleVoiceCancel = useCallback(() => {
+    voice.cancel();
+  }, [voice]);
   const reportedErrorKeysRef = useRef(new Set<string>());
   const primaryModifierPressed = usePrimaryFollowupModifier();
   const appleKeyboardPlatform = isAppleKeyboardPlatform();
@@ -1125,13 +1154,17 @@ function ConversationComposerImpl({
   // guide 是 CLI 已授权的 busy 输入路由，是否最终 steer 或回退 queue 由命令层裁决。
   const routingAllowsSend = draftMode || (snapshot !== null && mode !== "reject");
   const attachmentsReady = !attachmentsApi.hasUnreadyAttachments;
+  // 录音中允许点发送：发送语义变为「停止录音→转写→并入提交」（见 handleSendButtonClick）。
   const canSend =
+    ((!disabled &&
+      !pending &&
+      hasDraftToSubmit &&
+      routingAllowsSend &&
+      attachmentsReady &&
+      submissionReady) ||
+      voice.phase === "recording") &&
     !disabled &&
-    !pending &&
-    hasDraftToSubmit &&
-    routingAllowsSend &&
-    attachmentsReady &&
-    submissionReady;
+    !pending;
   // 旧 UI 状态机：streaming + 空草稿 → Stop；有草稿 → 发送键（入队）。
   const showStopControl = canStop && !hasDraftToSubmit;
 
@@ -1508,6 +1541,10 @@ function ConversationComposerImpl({
     },
     [submit],
   );
+  // 异步 finalize 回调里提交必须走 ref 拿最新闭包：stop 时刻捕获的 submit
+  // 快照里草稿还是空的，空草稿守卫会静默吞掉发送。
+  const handleEditorSubmitRef = useRef(handleEditorSubmit);
+  handleEditorSubmitRef.current = handleEditorSubmit;
 
   const handleModifiedEditorSubmit = useCallback(
     (value: string) => {
@@ -1555,10 +1592,36 @@ function ConversationComposerImpl({
     });
   }, [onStop]);
 
+  // 录音条上的蓝色发送键：与提交区发送键同语义（原文保留→后台权威转写→
+  // 必要时原地替换→提交）。空结果不发送：hook 已原地重开麦克风并提示。
+  const handleVoiceFinishSend = useCallback(() => {
+    const { previewText, finalize } = voice.stop();
+    if (previewText) appendVoiceTranscript(previewText);
+    void finalize.then((finalText) => {
+      if (!finalText && !previewText) return;
+      let value = inputApiRef.current?.getMarkdown() ?? "";
+      if (finalText && finalText !== previewText) {
+        value = previewText ? value.replace(previewText, finalText) : finalText;
+      }
+      if (!value.trim()) return;
+      sendTriggerRef.current = "button";
+      // 异步 finalize 回调里必须走 ref 调用最新提交闭包：stop 时刻捕获的
+      // submit 快照里草稿还是空的，空草稿守卫会静默吞掉发送。
+      handleEditorSubmitRef.current(value);
+    });
+  }, [appendVoiceTranscript, voice]);
+
   // 发送键是 type="submit"，与 Enter 共用 handleEditorSubmit；DOM 事件顺序保证 click 早于
-  // submit，故这里只置标记，由 submit() 读取并复位。
+  // submit，故这里只置标记，由 submit() 读取并复位。录音中点击发送 = 停止录音 →
+  // 转写 → 文本并入编辑器 → 按当次 markdown 提交（转写+发送二合一）。
   const handleSendButtonClick = useCallback(
     (event: ReactMouseEvent<HTMLButtonElement>) => {
+      if (voice.phase === "recording") {
+        event.preventDefault();
+        event.stopPropagation();
+        handleVoiceFinishSend();
+        return;
+      }
       sendTriggerRef.current = "button";
       reversePointerDeliveryRef.current = shouldReverseFollowupDeliveryForPointer({
         enabled: modifiedEnterReversesDelivery,
@@ -1567,8 +1630,54 @@ function ConversationComposerImpl({
         isApplePlatform: appleKeyboardPlatform,
       });
     },
-    [appleKeyboardPlatform, modifiedEnterReversesDelivery],
+    [
+      appleKeyboardPlatform,
+      appendVoiceTranscript,
+      handleEditorSubmit,
+      handleVoiceFinishSend,
+      modifiedEnterReversesDelivery,
+      voice,
+    ],
   );
+
+  // 「边说边蹦字」预览（rolling 全量重转，调研 P0 定案）：每 600ms 对全部
+  // 已采集音频重转一次（whisper 段级时间戳输出），preview = 全部段拼接。
+  // 全量窗口 = 上下文 100% 完整，同音字/断句/技术词错误显著低于短段独立
+  // 识别；同音频同参数识别是确定性的，每轮重建 preview 无需跨窗文本对齐
+  // （RMS 分段器与 dedupeHead 由此退役）。两条纪律沿用：
+  // ① 音频增量 < 0.6s 不转写（省 spawn）；
+  // ② voice 对象每秒因计时器重建，effect 只依赖 phase、controller 经
+  //    voiceRef 读取，分段器时代「每秒重置状态」的坑不再适用但纪律保留。
+  const VOICE_PREVIEW_ENABLED = true;
+  const [voicePreview, setVoicePreview] = useState("");
+  const voiceRef = useRef(voice);
+  voiceRef.current = voice;
+  useEffect(() => {
+    if (!VOICE_PREVIEW_ENABLED || voice.phase !== "recording") {
+      if (voice.phase === "idle") setVoicePreview("");
+      return;
+    }
+    let lastTranscribedEnd = 0;
+    const clock = window.setInterval(() => {
+      const controller = voiceRef.current;
+      if (controller.previewBusy()) return;
+      const captured = controller.capturedSeconds();
+      // 音频增量不足 0.6s 不转写；转写在飞时 capturedSeconds 持续增长，
+      // 下一轮 tick 自然补上。
+      if (captured - lastTranscribedEnd < 0.6) return;
+      lastTranscribedEnd = captured;
+      void controller.transcribeAll().then((segments) => {
+        const text = segments
+          .map((segment) => segment.text)
+          .join("")
+          .trim();
+        if (text) setVoicePreview(text);
+      });
+    }, 600);
+    return () => window.clearInterval(clock);
+    // 仅 phase 驱动预览循环；controller 方法经 voiceRef 读取（见上注释）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- voice 对象每秒因计时器重建
+  }, [voice.phase]);
 
   // ── 「加入对话」全局事件（workspace file tree 右键/按钮）→ mention 插入 ──
   useEffect(() => {
@@ -2061,6 +2170,14 @@ function ConversationComposerImpl({
             onSendCompressionCommand={onSendCompressionCommand}
           />
         </span>
+        {/* 语音输入：桌面宿主提供转写桥时才渲染（web 不占位）；常驻发送键旁，
+            录音中变红色停止键（再点=完成转写）。 */}
+        <VoiceMicButton
+          controller={voice}
+          disabled={disabled}
+          onFinish={handleVoiceFinish}
+          onStart={handleVoiceStart}
+        />
         {showStopControl ? (
           <ControlHintTooltip title={stopTooltipTitle} shortcut="Esc">
             <Button
@@ -2109,6 +2226,8 @@ function ConversationComposerImpl({
       handleStopClick,
       handleSendButtonClick,
       handleConfigPickerOpenChange,
+      handleVoiceFinish,
+      handleVoiceStart,
       mode,
       handleSelectModelTrace,
       modelSelectionReload,
@@ -2246,50 +2365,67 @@ function ConversationComposerImpl({
             })}
           </div>
         ) : null}
-        <ChatPromptEditor
-          workspacePath={workspacePath}
-          workspaceIdentity={workspaceIdentity}
-          taskId={sessionId}
-          skillCatalogSessionId={skillCatalogSessionId}
-          placeholder={placeholder}
-          disabled={disabled || mode === "reject"}
-          submitting={pending}
-          submitDisabled={pending || !routingAllowsSend || !attachmentsReady || !submissionReady}
-          allowSubmitWhenEmpty={
-            // 发送按钮已把代码评论视为可发送上下文，但这里曾漏掉同一状态，
-            // 导致空文本仅附代码评论时 Enter 被编辑器判为空，必须改点发送按钮。
-            hasCodeCommentContexts ||
-            hasAttachments ||
-            hasWebElementContexts ||
-            hasPptxElementReferences ||
-            hasConversationSelectionReferences
-          }
-          enterSubmits={enterSubmits}
-          onModifiedSubmit={modifiedEnterSubmits ? handleModifiedEditorSubmit : undefined}
-          submitLabel={sendTooltipTitle}
-          showSlashButton
-          // @ 是 Plugin / 文件 / 对话 / 画板主入口；# 会话与 $ / ¥ / ￥ Skills
-          // 仍由 MentionPlugin 保留兼容触发，但不在 + 菜单重复展示。
-          showMentionButton
-          topContent={topContentNode}
-          attachmentAction={attachmentAction}
-          inputTestId={TID_V4_COMPOSER_INPUT}
-          inputApiRef={inputApiRef}
-          promptHistory={promptHistory}
-          // 命令目录必须完整来自 CLI workspace slash catalog；UI 只在
-          // secondary pane 按产品能力隐藏 goal，不再追加任何内建命令或别名。
-          excludedSlashCommandNames={suppressGoalCommands ? ["goal"] : undefined}
-          appSlashCommands={appSlashCommands}
-          enableMentionPanel
-          leadingActions={leadingActionsNode}
-          submitControl={submitControlNode}
-          className="p-0"
-          onChange={handleEditorChange}
-          onFocus={handleEditorFocus}
-          onSubmit={handleEditorSubmit}
-          onWhiteboardMentionSelected={attachmentsApi.handleWhiteboardMentionSelected}
-          onPaste={attachmentsApi.handlePaste}
-        />
+        <div className="relative">
+          <ChatPromptEditor
+            workspacePath={workspacePath}
+            workspaceIdentity={workspaceIdentity}
+            taskId={sessionId}
+            skillCatalogSessionId={skillCatalogSessionId}
+            placeholder={placeholder}
+            disabled={disabled || mode === "reject"}
+            submitting={pending}
+            submitDisabled={pending || !routingAllowsSend || !attachmentsReady || !submissionReady}
+            allowSubmitWhenEmpty={
+              // 发送按钮已把代码评论视为可发送上下文，但这里曾漏掉同一状态，
+              // 导致空文本仅附代码评论时 Enter 被编辑器判为空，必须改点发送按钮。
+              hasCodeCommentContexts ||
+              hasAttachments ||
+              hasWebElementContexts ||
+              hasPptxElementReferences ||
+              hasConversationSelectionReferences
+            }
+            enterSubmits={enterSubmits}
+            onModifiedSubmit={modifiedEnterSubmits ? handleModifiedEditorSubmit : undefined}
+            submitLabel={sendTooltipTitle}
+            showSlashButton
+            // @ 是 Plugin / 文件 / 对话 / 画板主入口；# 会话与 $ / ¥ / ￥ Skills
+            // 仍由 MentionPlugin 保留兼容触发，但不在 + 菜单重复展示。
+            showMentionButton
+            topContent={topContentNode}
+            attachmentAction={attachmentAction}
+            inputTestId={TID_V4_COMPOSER_INPUT}
+            inputApiRef={inputApiRef}
+            promptHistory={promptHistory}
+            // 命令目录必须完整来自 CLI workspace slash catalog；UI 只在
+            // secondary pane 按产品能力隐藏 goal，不再追加任何内建命令或别名。
+            excludedSlashCommandNames={suppressGoalCommands ? ["goal"] : undefined}
+            appSlashCommands={appSlashCommands}
+            enableMentionPanel
+            leadingActions={leadingActionsNode}
+            submitControl={submitControlNode}
+            className="p-0"
+            onChange={handleEditorChange}
+            onFocus={handleEditorFocus}
+            onSubmit={handleEditorSubmit}
+            onWhiteboardMentionSelected={attachmentsApi.handleWhiteboardMentionSelected}
+            onPaste={attachmentsApi.handlePaste}
+          />
+          {/* 录音条 = 输入框底行本身（照抄 DeepSeek：✕ | 点阵 | ■完成 | ➤蓝发送）。
+              转写中（phase=transcribing）也保持显示，让「停止→转写」状态连续。 */}
+          {voice.phase !== "idle" ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10">
+              <div className="pointer-events-auto">
+                <VoiceRecordingPanel
+                  controller={voice}
+                  onFinish={handleVoiceFinish}
+                  onFinishSend={handleVoiceFinishSend}
+                  onCancel={handleVoiceCancel}
+                  previewText={voicePreview}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
         {attachmentsApi.attachmentError ? (
           <p className="flex items-start gap-2 p-3 text-ui-base text-warning">
             <InfoIcon className="mt-0.5 size-4 shrink-0" />

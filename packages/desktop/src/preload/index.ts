@@ -245,6 +245,14 @@ window.addEventListener("DOMContentLoaded", updateRendererProcessTitle, {
  * 通过 MessagePort RPC 访问，不再经过此 bridge。
  */
 contextBridge.exposeInMainWorld("zcode", {
+  // 语音输入：renderer 采集 PCM16 送主进程转写（whisper-cli / GLM ASR，见 desktopVoiceIpc.ts）。
+  // 返回段时间戳（秒，相对本次送转写的 wav 起点）；prompt 为 initial_prompt（前文+技术词）。
+  voiceTranscribe: (
+    pcm16: Int16Array,
+    sampleRate: number,
+    prompt?: string,
+  ): Promise<{ start: number; end: number; text: string }[]> =>
+    ipcRenderer.invoke("voice:transcribe", pcm16, sampleRate, prompt),
   connectRemote: (
     options: RemoteTarget,
     requestId?: string,
