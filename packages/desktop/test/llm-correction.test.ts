@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { applyCorrections, correctWithLlm } from "../src/main/asr/llm-correction.js";
 
 test("applyCorrections: 合法同音字 edit 被应用", () => {

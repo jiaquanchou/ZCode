@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { after, test } from "node:test";
+import { afterAll as after, test } from "vitest";
 import {
   analyzePcm16,
   buildWhisperArgs,

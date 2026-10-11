@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { AsrManager, AsrManagerError } from "../src/main/asr/asr-manager.js";
 import type { AsrProvider, AsrProviderHealth, AsrTranscribeOptions, AsrTranscribeResult } from "../src/main/asr/types.js";
 
