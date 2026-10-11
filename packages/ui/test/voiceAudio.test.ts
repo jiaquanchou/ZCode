@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { test } from "vitest";
 import { downsampleLinear, float32ToInt16, mergeFloat32Chunks } from "../src/voiceAudio.js";
 
 test("downsampleLinear: 48k→16k 输出长度为 1/3 且零点保持", () => {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFile } from "node:fs";
-import { test } from "node:test";
+import { test } from "vitest";
 import { WhisperResidentServer } from "../src/main/asr/whisper-resident-server.js";
 import { createWhisperResidentProvider } from "../src/main/asr/whisper-resident-provider.js";
 
@@ -20,7 +20,7 @@ const config = {
   whisperServerBin: "whisper-server",
 };
 
-test("resident server：启动 → 两次转写都快速（模型常驻）→ dispose", { skip: !hasAssets }, async () => {
+test.skipIf(!hasAssets)("resident server：启动 → 两次转写都快速（模型常驻）→ dispose", async () => {
   const server = new WhisperResidentServer({
     bin: "whisper-server",
     modelPath: MODEL,
@@ -49,7 +49,7 @@ test("resident server：启动 → 两次转写都快速（模型常驻）→ di
   await server.dispose();
 });
 
-test("resident provider：静音 PCM 直接判空，不打扰常驻服务", { skip: !hasAssets }, async () => {
+test.skipIf(!hasAssets)("resident provider：静音 PCM 直接判空，不打扰常驻服务", async () => {
   const provider = createWhisperResidentProvider({ config, basePort: 18_292 });
   const result = await provider.transcribe({
     pcm16: new Int16Array(16_000).fill(0), // 1s 全零
@@ -60,7 +60,7 @@ test("resident provider：静音 PCM 直接判空，不打扰常驻服务", { sk
   await provider.dispose();
 });
 
-test("resident provider：真实音频转写返回文本并带 prompt", { skip: !hasAssets }, async () => {
+test.skipIf(!hasAssets)("resident provider：真实音频转写返回文本并带 prompt", async () => {
   const provider = createWhisperResidentProvider({ config, basePort: 18_293 });
   const wav = await readFile(SAMPLE);
   // 从 wav 提取 PCM16（44 字节头后）

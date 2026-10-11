@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { test } from "node:test";
+import { test } from "vitest";
 import { join } from "node:path";
 import {
   createSenseVoiceWorkerProvider,
@@ -22,12 +22,12 @@ async function pcmFromFile(name: string): Promise<Int16Array> {
   return pcm;
 }
 
-test("resolveSenseVoiceModelPaths: 能发现模型（DSH 资产或显式配置）", { skip: !hasModel }, () => {
+test.skipIf(!hasModel)("resolveSenseVoiceModelPaths: 能发现模型（DSH 资产或显式配置）", () => {
   assert.ok(dshPaths?.model.includes("model.int8.onnx"));
   assert.ok(dshPaths?.tokens.endsWith("tokens.txt"));
 });
 
-test("sensevoice worker E2E：spawn→ready→转写→文本正确且快", { skip: !hasModel }, async () => {
+test.skipIf(!hasModel)("sensevoice worker E2E：spawn→ready→转写→文本正确且快", async () => {
   assert.ok(existsSync(WORKER), "worker .cjs 应存在");
   const provider = createSenseVoiceWorkerProvider({
     config: {},
@@ -41,7 +41,7 @@ test("sensevoice worker E2E：spawn→ready→转写→文本正确且快", { sk
   await provider.dispose();
 });
 
-test("sensevoice worker E2E：连发两条（队列消费 + 模型复用）", { skip: !hasModel }, async () => {
+test.skipIf(!hasModel)("sensevoice worker E2E：连发两条（队列消费 + 模型复用）", async () => {
   const provider = createSenseVoiceWorkerProvider({
     config: {},
     workerModulePath: WORKER,
