@@ -15,6 +15,8 @@
 
 ZCode 是 AI 编程工作台，提供桌面应用、浏览器界面和终端 Agent。本仓库包含客户端、后端服务、共享 UI，以及 Agent CLI 与运行时源码。
 
+> **关于本 Fork**：本仓库是 [zai-org/ZCode](https://github.com/zai-org/ZCode) 的个人 Fork，个人改动集中在**语音输入与 ASR 引擎优化**（引擎可插拔、rolling 预览、静音防线、横评框架），默认分支 `feat/asr-engine-optimization` 为个人开发线，`main` 跟随上游。改动清单、构建验证与研发计划见 [docs/个人Fork与ASR开发说明.md](docs/个人Fork与ASR开发说明.md)，其余说明与上游保持一致。
+
 ## 更新
 
 - 2026-10-10：更新至 ZCode v3.15.1 版本。
