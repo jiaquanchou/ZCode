@@ -1,0 +1,6 @@
+{"id": "001", "audio": "001.wav", "text": "我们使用 PostgreSQL 作为数据库，WebSocket 连接通过 Nginx 转发。", "terms": ["PostgreSQL", "WebSocket", "Nginx"], "category": "coding_terms"}
+{"id": "002", "audio": "002.wav", "text": "这个服务部署在 Kubernetes 上，用 Redis 做缓存。", "terms": ["Kubernetes", "Redis"], "category": "coding_terms"}
+{"id": "003", "audio": "003.wav", "text": "帮我检查一下这个 Go 服务为什么连接会断开。", "terms": ["Go"], "category": "general_zh"}
+{"id": "004", "audio": "004.wav", "text": "Claude Code 可以通过 MCP 调用工具。", "terms": ["Claude Code", "MCP"], "category": "coding_terms"}
+{"id": "005", "audio": "005.wav", "text": "帮我检查一下这个 Go 服务为什么 WebSocket 经过 Nginx 以后连接会断开，再看一下 PostgreSQL 连接池配置，以及 Kubernetes 部署里面的 readiness probe 有没有问题。", "terms": ["Go", "WebSocket", "Nginx", "PostgreSQL", "Kubernetes", "readiness probe"], "category": "long_sentence"}
+{"id": "006", "audio": "silence.wav", "text": "", "terms": [], "category": "silence"}

@@ -40,6 +40,18 @@ export interface TuiCopy {
     restorePreviousInputFailed: string;
     typePrompt: string;
   };
+  voice: {
+    busyStatus: string;
+    emptyResult: string;
+    insertedText(count: number): string;
+    notConfiguredGlm: string;
+    notConfiguredWhisper: string;
+    recording(seconds: number): string;
+    startFailed(message: string): string;
+    transcribeFailed(message: string): string;
+    transcribing: string;
+    unavailable: string;
+  };
   loginRequired: {
     help: string;
     message: string;

@@ -15,6 +15,8 @@ import { EffortSuggestionPanel } from "./app-effort-suggestion-panel.js";
 import { InputPane, type PromptInputEditor } from "./app-input-pane.js";
 import { InputActiveStatus } from "./app-input-status.js";
 import { QueuedInputPanel } from "./app-queued-inputs.js";
+import { VoiceStatusRow } from "./app-voice-input.js";
+import type { VoiceInputStatusView } from "./app-voice-input.js";
 import { ModeSuggestionPanel } from "./app-mode-suggestion-panel.js";
 import { ModelSuggestionPanel } from "./app-model-suggestion-panel.js";
 import { useMcpSidebarStatus } from "./app-mcp-status.js";
@@ -95,6 +97,7 @@ export function AppView(props: {
   traceId?: string;
   terminalWidth: number;
   usage?: ModelUsageSummary;
+  voiceStatus?: VoiceInputStatusView;
   workflowCardsByToolCallId?: ReadonlyMap<string, TuiWorkflowCard>;
   expandedWorkflowRunIds?: ReadonlySet<string>;
 }): React.ReactElement {
@@ -226,6 +229,7 @@ export function AppView(props: {
               slashSelection: props.slashSelection,
               submitValue: readOnly ? () => {} : props.submitValue,
               thoughtLevel: props.thoughtLevel,
+              voiceStatus: props.voiceStatus,
             }),
     ),
   );
@@ -257,6 +261,7 @@ export function ComposerInputArea(props: {
   slashSelection?: SlashSelectionState;
   submitValue: (value: string) => void;
   thoughtLevel: string;
+  voiceStatus?: VoiceInputStatusView;
 }): React.ReactElement {
   return h(
     React.Fragment,
@@ -308,6 +313,7 @@ export function ComposerInputArea(props: {
           selectedIndex: props.slashSelection.selectedIndex,
         })
       : null,
+    props.voiceStatus ? h(VoiceStatusRow, { copy: props.copy, status: props.voiceStatus }) : null,
     h(QueuedInputPanel, {
       contentWidth: props.contentWidth,
       copy: props.copy,

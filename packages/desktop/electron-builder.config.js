@@ -823,6 +823,8 @@ export default {
       // 缺失该 key 时 macOS 会静默拒绝 CoreBluetooth 枚举，内置浏览器 Web Bluetooth
       // 的设备选择器列表恒为空（实测 Chrome 有蓝牙隐私权限则正常）。
       NSBluetoothAlwaysUsageDescription: `${desktopProductIdentity.productName} needs Bluetooth access to list nearby devices when a website you open in the embedded browser requests one.`,
+      // 语音输入：getUserMedia 采集麦克风需要系统用途声明，缺失时 macOS 直接拒绝。
+      NSMicrophoneUsageDescription: `${desktopProductIdentity.productName} needs microphone access to transcribe voice input in the chat composer.`,
     },
     // 预签名脚本走的是原生 codesign，要求完整的 "Developer ID Application: ..." 身份串；
     // 但 electron-builder 的 mac.identity 在 26.x 下会拒绝带此前缀的名字。

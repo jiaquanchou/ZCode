@@ -95,6 +95,20 @@ Slash Commands:
       restorePreviousInputFailed: "无法恢复上一条输入。",
       typePrompt: "输入问题后按 Enter。",
     },
+    voice: {
+      busyStatus: "语音输入在提示词空闲时可用。",
+      emptyResult: "未识别到语音内容。",
+      insertedText: (count) => `已插入语音转写（${count} 字符）。`,
+      notConfiguredGlm:
+        "语音输入未配置：请在 ~/.zcode/cli/config.json 的 voice.glmApiKey 填写 BigModel API Key。",
+      notConfiguredWhisper:
+        "语音输入未配置：请在 ~/.zcode/cli/config.json 的 voice.whisperModelPath 填写 whisper 模型路径。",
+      recording: (seconds) => `● 录音中 ${seconds}s（再按 Ctrl+G 结束）`,
+      startFailed: (message) => `无法开始录音：${message}`,
+      transcribeFailed: (message) => `语音转写失败：${message}`,
+      transcribing: "◌ 转写中…",
+      unavailable: "当前终端不支持语音输入。",
+    },
     loginRequired: {
       help: "输入 /model 查看模型，或输入 /login 连接 Coding Plan 账号。",
       message: "没有可用模型，请配置 Provider 或输入 /login 登录。",

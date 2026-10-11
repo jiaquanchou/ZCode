@@ -66,6 +66,7 @@ type UseTuiKeyboardControlsOptions = {
   filteredModelOptions: readonly TuiModelOption[];
   filteredSlashCommands: readonly SlashCommand[];
   handleFileMentionKey: (key: KeyEvent) => boolean;
+  handleVoiceKey: () => void;
   inputHistoryActive: boolean;
   messages: readonly Message[];
   effortSelection: EffortCommandSelectionState | undefined;
@@ -105,6 +106,7 @@ export function useTuiKeyboardControls({
   filteredModelOptions,
   filteredSlashCommands,
   handleFileMentionKey,
+  handleVoiceKey,
   inputHistoryActive,
   messages,
   effortSelection,
@@ -229,6 +231,14 @@ export function useTuiKeyboardControls({
         if (key.name === "y" && key.ctrl) {
           consumeKey(key);
           if (!copyCurrentSelection()) setStatus("No selected text to copy.");
+          return;
+        }
+
+        // Ctrl+G toggles voice input. Terminals deliver the key either as a
+        // parsed ctrl combo or as the raw BEL byte, so both shapes are accepted.
+        if ((key.name === "g" && key.ctrl) || key.raw === "\x07") {
+          consumeKey(key);
+          handleVoiceKey();
           return;
         }
 
@@ -389,6 +399,7 @@ export function useTuiKeyboardControls({
         filteredModelOptions,
         filteredSlashCommands,
         handleFileMentionKey,
+        handleVoiceKey,
         inputHistoryActive,
         messages,
         modelSelection,

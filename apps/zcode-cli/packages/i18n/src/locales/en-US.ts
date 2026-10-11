@@ -96,6 +96,20 @@ Slash Commands:
       restorePreviousInputFailed: "Could not restore previous input.",
       typePrompt: "Type a question and press Enter.",
     },
+    voice: {
+      busyStatus: "Voice input is available when the prompt is idle.",
+      emptyResult: "No speech was recognized.",
+      insertedText: (count) => `Inserted voice transcript (${count} characters).`,
+      notConfiguredGlm:
+        "Voice input is not configured: set voice.glmApiKey in ~/.zcode/cli/config.json.",
+      notConfiguredWhisper:
+        "Voice input is not configured: set voice.whisperModelPath in ~/.zcode/cli/config.json.",
+      recording: (seconds) => `● Recording ${seconds}s (press Ctrl+G again to stop)`,
+      startFailed: (message) => `Could not start recording: ${message}`,
+      transcribeFailed: (message) => `Voice transcription failed: ${message}`,
+      transcribing: "◌ Transcribing...",
+      unavailable: "Voice input is not available in this terminal.",
+    },
     loginRequired: {
       help: "Use /model to view models, or /login to connect a Coding Plan account.",
       message: "No available models. Configure a provider or sign in with /login.",

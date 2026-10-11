@@ -36,4 +36,8 @@ export type {
   TuiWorkspacePathSuggestion,
   TuiWorkspacePathSuggestionResult,
   TuiWriteClipboardText,
+  TuiVoiceErrorCode,
+  TuiVoiceInput,
+  TuiVoiceInputError,
+  TuiVoiceSession,
 } from "./types.js";
